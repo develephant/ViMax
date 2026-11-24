@@ -416,7 +416,8 @@ class Script2VideoPipeline:
                     _emit_render_progress(progress, "frame_prompt_start", f"Selecting references for first frame of shot {first_shot_idx}", {"camera_idx": camera.idx, "shot_idx": first_shot_idx, "frame_type": "first_frame"})
                     ff_selector_output = await self.reference_image_selector.select_reference_images_and_generate_prompt(
                         available_image_path_and_text_pairs=available_image_path_and_text_pairs,
-                        frame_description=shot_descriptions[first_shot_idx].ff_desc
+                        frame_description=shot_descriptions[first_shot_idx].ff_desc,
+                        max_images=getattr(self.image_generator, "max_reference_images", 8)
                     )
                     with open(ff_selector_output_path, 'w', encoding='utf-8') as f:
                         json.dump(ff_selector_output, f, ensure_ascii=False, indent=4)
@@ -699,7 +700,8 @@ class Script2VideoPipeline:
                 _emit_render_progress(progress, "frame_prompt_start", f"Selecting references for {frame_type} of shot {shot_idx}", {"shot_idx": shot_idx, "frame_type": frame_type})
                 selector_output = await self.reference_image_selector.select_reference_images_and_generate_prompt(
                     available_image_path_and_text_pairs=available_image_path_and_text_pairs,
-                    frame_description=frame_desc
+                    frame_description=frame_desc,
+                    max_images=getattr(self.image_generator, "max_reference_images", 8)
                 )
                 with open(selector_output_path, 'w', encoding='utf-8') as f:
                     json.dump(selector_output, f, ensure_ascii=False, indent=4)

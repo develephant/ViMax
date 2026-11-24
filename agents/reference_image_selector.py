@@ -92,7 +92,7 @@ Image 4: [Camera 2] Shot from Bob's over-the-shoulder perspective. Bob is on the
 </SEQ_IMAGES>
 
 [Output]
-You need to select the most relevant reference images based on the user's description and put the corresponding indices in the `ref_image_indices` field of the output. At the same time, you should generate a text prompt that describes the image to be created, specifying which elements in the generated image should reference which image (and which elements within it).
+You need to select up to {max_images} of the most relevant reference images based on the user's description and put the corresponding indices in the `ref_image_indices` field of the output. At the same time, you should generate a text prompt that describes the image to be created, specifying which elements in the generated image should reference which image (and which elements within it).
 
 {format_instructions}
 
@@ -104,7 +104,7 @@ You need to select the most relevant reference images based on the user's descri
 - The images from prior frames are arranged in chronological order. Give higher priority to more recent images (those closer to the end of the sequence).
 - Choose reference image descriptions that are as concise as possible and avoid including duplicate information. For example, if Image 3 depicts the facial features of Bob from the front, and Image 1 also depicts Bob's facial features from the front-view portrait, then Image 1 is redundant and should not be selected.
 - For character portraits, you can only select at most one image from multiple views (front, side, back). Choose the most appropriate one based on the frame description. For example, when depicting a character from the side, choose the side view of the character.
-- Select at most **8** optimal reference image descriptions.
+- Select at most **{max_images}** optimal reference images.
 - The text guiding image editing should be as concise as possible.
 """
 
@@ -153,6 +153,7 @@ class ReferenceImageSelector:
         self,
         available_image_path_and_text_pairs: List[Tuple[str, str]],
         frame_description: str,
+        max_images: int = 8,
     ):
         filtered_image_path_and_text_pairs = available_image_path_and_text_pairs
 
@@ -205,7 +206,7 @@ class ReferenceImageSelector:
         parser = PydanticOutputParser(pydantic_object=RefImageIndicesAndTextPrompt)
 
         messages = [
-            SystemMessage(content=system_prompt_template_select_reference_images_multimodal.format(format_instructions=parser.get_format_instructions())),
+            SystemMessage(content=system_prompt_template_select_reference_images_multimodal.format(format_instructions=parser.get_format_instructions(), max_images=max_images)),
             HumanMessage(content=human_content)
         ]
 
@@ -214,6 +215,9 @@ class ReferenceImageSelector:
         try:
             response = await chain.ainvoke(messages)
             reference_image_path_and_text_pairs = select_pairs_by_indices(filtered_image_path_and_text_pairs, response.ref_image_indices)
+            if len(reference_image_path_and_text_pairs) > max_images:
+                logging.warning(f"Selected {len(reference_image_path_and_text_pairs)} reference images exceeds max_images={max_images}; truncating to the first {max_images}")
+                reference_image_path_and_text_pairs = reference_image_path_and_text_pairs[:max_images]
             return {
                 "reference_image_path_and_text_pairs": reference_image_path_and_text_pairs,
                 "text_prompt": response.text_prompt,

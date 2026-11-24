@@ -3,6 +3,7 @@ from .protocols import ImageGenerator, VideoGenerator
 from .render_backend import RenderBackend
 
 # image generators
+from .image_generator_comfyui import ImageGeneratorComfyUI
 from .image_generator_doubao_seedream_yunwu_api import ImageGeneratorDoubaoSeedreamYunwuAPI
 from .image_generator_nanobanana_google_api import ImageGeneratorNanobananaGoogleAPI
 from .image_generator_nanobanana_yunwu_api import ImageGeneratorNanobananaYunwuAPI
@@ -12,6 +13,7 @@ from .image_generator_openrouter_api import ImageGeneratorOpenRouterAPI
 from .reranker_bge_silicon_api import RerankerBgeSiliconapi
 
 # video generators
+from .video_generator_comfyui import VideoGeneratorComfyUI
 from .video_generator_doubao_seedance_yunwu_api import VideoGeneratorDoubaoSeedanceYunwuAPI
 from .video_generator_omni_yunwu_api import VideoGeneratorOmniYunwuAPI, VideoGeneratorOminiYunwuAPI
 from .video_generator_openrouter_api import VideoGeneratorOpenRouterAPI
@@ -23,11 +25,13 @@ __all__ = [
     "ImageGenerator",
     "VideoGenerator",
     "RenderBackend",
+    "ImageGeneratorComfyUI",
     "ImageGeneratorDoubaoSeedreamYunwuAPI",
     "ImageGeneratorNanobananaGoogleAPI",
     "ImageGeneratorNanobananaYunwuAPI",
     "ImageGeneratorOpenRouterAPI",
     "RerankerBgeSiliconapi",
+    "VideoGeneratorComfyUI",
     "VideoGeneratorDoubaoSeedanceYunwuAPI",
     "VideoGeneratorOmniYunwuAPI",
     "VideoGeneratorOminiYunwuAPI",

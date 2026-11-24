@@ -300,6 +300,23 @@ VIMAX_WEB_PORT=4174 npm run dev
 </details>
 
 <details>
+<summary><strong>Run on vast.ai (self-hosted ComfyUI + vLLM)</strong></summary>
+
+ViMax can run fully self-hosted on rented vast.ai GPUs: ComfyUI generates
+keyframes (FLUX.2 [klein] 4B/9B) and video (MiniMax-H3), and a vLLM instance
+serves the LLM — no hosted image/video APIs needed. A provisioning script
+(`deploy/vastai/provision.sh`) installs ViMax on the `vastai/comfy` image,
+downloads the models, and serves the Web UI through the Instance Portal.
+
+Select a ComfyUI preset via `model: comfyui/<preset>` (see
+`configs/comfyui/presets.yaml`) and point `base_url` at the ComfyUI root,
+e.g. `http://127.0.0.1:18188`.
+
+Full walkthrough: [deploy/vastai/README.md](deploy/vastai/README.md).
+
+</details>
+
+<details>
 <summary><strong>Usage</strong></summary>
 
 **Image Selection**
