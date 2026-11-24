@@ -269,6 +269,7 @@ def attach_reference_chain(workflow: dict, image_names: list[str], chain_cfg: di
                 "image": [load_ids[i], 0],
                 "upscale_method": "lanczos",
                 "megapixels": megapixels,
+                "resolution_steps": 1,
             },
         }
         result[encode_ids[i]] = {

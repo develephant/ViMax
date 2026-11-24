@@ -174,6 +174,8 @@ done
 export VIMAX_WEB_HOST=127.0.0.1
 export VIMAX_WEB_PORT=${VIMAX_WEB_PORT_INTERNAL}
 export VIMAX_UV_CMD=${UV_BIN}
+# Match the vLLM --max-model-len (see deploy/vastai/README.md); override via template env.
+export VIMAX_CONTEXT_WINDOW_TOKENS="\${VIMAX_CONTEXT_WINDOW_TOKENS:-32768}"
 
 cd "${VIMAX_DIR}"
 exec npm --prefix "${VIMAX_DIR}/web" run start 2>&1
