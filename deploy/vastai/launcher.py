@@ -144,10 +144,12 @@ def ensure_role(key: str, role: str, log, exclude_hosts=None, skip_ids=()) -> di
     for inst in labeled_instances(key, cfg["label"]):
         if inst["id"] in skip_ids:
             continue
+        # A stopped instance reports actual_status "exited" but cur_state "stopped".
+        if inst.get("cur_state") == "stopped":
+            log(f"{role}: starting stopped instance {inst['id']}")
+            vast(key, "start", "instance", str(inst["id"]))
+            return inst
         if inst.get("actual_status") not in FAILED_STATES:
-            if inst.get("actual_status") == "stopped":
-                log(f"{role}: starting stopped instance {inst['id']}")
-                vast(key, "start", "instance", str(inst["id"]))
             log(f"{role}: reusing instance {inst['id']} ({inst.get('gpu_name')})")
             return inst
         log(f"{role}: instance {inst['id']} is {inst.get('actual_status')}, ignoring")
@@ -189,8 +191,9 @@ def wait_ready(key: str, role: str, inst: dict, log) -> dict:
             last_sig = sig
         if ready:
             return cur
-        err_polls = err_polls + 1 if "error" in msg.lower() else 0
-        if status in FAILED_STATES or err_polls >= 3:
+        # Consecutive bad polls (~2 min) so a just-started instance still showing "exited" isn't flagged.
+        err_polls = err_polls + 1 if ("error" in msg.lower() or status in FAILED_STATES) else 0
+        if err_polls >= 6:
             log(f"{role} looks stuck — press Retry {role.capitalize()}")
             raise RuntimeError(f"{role} stuck in status {status}: {msg}")
         time.sleep(POLL_SECONDS)
