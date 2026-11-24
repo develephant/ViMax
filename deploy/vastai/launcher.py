@@ -81,7 +81,9 @@ def scrub(text: str, key: str) -> str:
     return text.replace(key, "<key>") if key else text
 
 
-def vast(key: str, *args):
+def vast(key: str, *args, parse: bool = True):
+    """Run the vastai CLI. With parse=False (start/stop/destroy, which may print
+    plain text on success) only a JSON error payload is treated as failure."""
     cli = shutil.which("vastai")
     if not cli:
         raise RuntimeError("vastai CLI not on PATH")
@@ -89,9 +91,18 @@ def vast(key: str, *args):
         [cli, *args, "--raw", "--api-key", key],
         capture_output=True, text=True,
     )
+    output = scrub(proc.stdout or proc.stderr or "", key)
     if proc.returncode != 0:
-        raise RuntimeError(f"vastai {' '.join(args)} failed: {scrub(proc.stderr or proc.stdout, key)[:500]}")
-    return parse_cli_json(proc.stdout)
+        raise RuntimeError(f"vastai {' '.join(args)} failed: {output[:500]}")
+    if parse:
+        return parse_cli_json(proc.stdout)
+    try:
+        payload = parse_cli_json((proc.stdout or "") + (proc.stderr or ""))
+    except (RuntimeError, ValueError):
+        return output.strip()
+    if isinstance(payload, dict) and (payload.get("error") or payload.get("success") is False):
+        raise RuntimeError(f"vastai {' '.join(args)} failed: {scrub(json.dumps(payload), key)[:500]}")
+    return payload
 
 
 def user_id(key: str) -> int:
@@ -147,7 +158,7 @@ def ensure_role(key: str, role: str, log, exclude_hosts=None, skip_ids=()) -> di
         # A stopped instance reports actual_status "exited" but cur_state "stopped".
         if inst.get("cur_state") == "stopped":
             log(f"{role}: starting stopped instance {inst['id']}")
-            vast(key, "start", "instance", str(inst["id"]))
+            vast(key, "start", "instance", str(inst["id"]), parse=False)
             return inst
         if inst.get("actual_status") not in FAILED_STATES:
             log(f"{role}: reusing instance {inst['id']} ({inst.get('gpu_name')})")
@@ -253,7 +264,7 @@ def retry_role(key: str, role: str, log):
         if hid:
             excluded.add(hid)
         log(f"{role}: destroying instance {inst['id']}")
-        vast(key, "destroy", "instance", str(inst["id"]), "-y")
+        vast(key, "destroy", "instance", str(inst["id"]), "-y", parse=False)
         destroyed.add(inst["id"])
     inst = wait_ready(key, role, ensure_role(key, role, log, excluded, destroyed), log)
     media = inst if role == "media" else running_role(key, "media")
